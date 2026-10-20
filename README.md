@@ -1,40 +1,51 @@
-# ASTERA — Your sky. Your story.
+# ASTERA
+### Your sky. Your story.
 
-A minimalist night-sky photo generator for Part 3. Upload JPG/PNG, adjust brightness and contrast, choose a detection threshold, compare original and processed images, add a date and place, and download the finished PNG. Optional candidate markers and a transparent light-layer PNG are included.
+ASTERA is a small photo-editing app for night-sky pictures. Upload a JPG or PNG, adjust brightness and contrast, and use the threshold slider to find small bright regions. You can compare the original and edited photos, add a date and location, and download the result as a PNG.
 
-## Run
+[Open the app](https://astera-wilmarycmf.streamlit.app/)
 
-Python 3.11 or 3.12 recommended.
+## Features
+
+- Brightness, contrast and detection threshold controls
+- Original and processed photo previews
+- Bright-point candidate count and optional circle markers
+- Date and location stamp
+- Final PNG and transparent light-layer downloads
+
+The count is based on image brightness. A point could be a star, noise or another light source, so it is not a confirmed star count. Changing the threshold can split or merge bright regions. Up to 200 markers are shown.
+
+## Image processing
+
+- **Image arithmetic:** OpenCV addition, subtraction and multiplication change brightness and contrast. Values are clipped to the 0–255 range.
+- **Thresholding:** the photo is converted to grayscale and blurred before applying a global threshold. Connected components find bright regions, with size and shape filters for the candidate count.
+- **Drawing and annotation:** circles mark candidates. Pillow draws the date and location text, and OpenCV blends the stamp into the photo.
+- **Alpha masks:** a softened threshold mask provides transparency for the light-layer PNG.
+
+## Run locally
+
+Use Python 3.11 or 3.12.
 
 ```sh
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## Concepts
+## Files
 
-- **Image arithmetic:** saturated OpenCV addition/subtraction and multiplication adjust brightness and contrast without integer wraparound.
-- **Thresholding:** grayscale, Gaussian blur, global threshold, morphological opening and connected components locate small bright regions. Area/aspect filters exclude some large or elongated regions.
-- **Drawing / annotation:** OpenCV circles mark candidates; a fitted date/location stamp uses Pillow text for accented place names and OpenCV blending.
-- **Alpha masks:** the optional RGBA export uses the softened threshold mask as alpha. It includes thresholded regions, not just counted candidates.
+- `app.py`: page layout and controls
+- `core.py`: image processing and PNG export
+- `test_app.py`: processing and interface checks
+- `.streamlit/config.toml`: colors and upload limit
 
-Candidates may be noise, lamps, stars or other objects. ASTERA does not confirm or identify stars. Counts need not decrease monotonically as the threshold rises: regions can split or merge. At most 200 candidate circles are drawn.
+## Limits
 
-Images are limited to 20 MB / 40 megapixels and fitted within 2,000 pixels on each side. Download dimensions match the processed preview. Uploaded images and edits are processed in memory for the active session; there is no database, account system or photo archive. Downloaded PNGs do not preserve original EXIF/GPS metadata. Nothing is written to a photo gallery on the server.
+Uploads must be JPG or PNG, up to 20 MB and 40 megapixels. Images are resized to fit within 2,000 × 2,000 pixels. The downloaded image matches the processed preview. The app works in memory during the session and has no photo archive. Exports do not include the original EXIF or GPS metadata.
 
-## Publish to Streamlit Community Cloud
+## Tests
 
-1. Create a GitHub repository and upload this folder's contents at the repository root, including `.streamlit/config.toml`.
-2. Sign in at https://share.streamlit.io and choose Create app, selecting the repository, branch `main` and entrypoint `app.py`.
-3. Choose Python 3.12 in advanced settings, then deploy.
-4. Confirm app access is public. Open its actual `.streamlit.app` URL without a signed-in session and test uploading/downloading before submitting it.
+```sh
+python test_app.py
+```
 
-**Live app:** https://astera-wilmarycmf.streamlit.app/
-
-**Repository:** https://github.com/wilmarycmf/astera
-
-Anonymous HTTP access and health check returned 200; public-cloud upload, candidate count and both downloads passed.
-
-## Validation
-
-Run `python test_app.py` from this folder. Tests cover processing, clipping, known synthetic candidate counts, small/panoramic watermark fitting, RGB/RGBA export, invalid input, and Streamlit control changes. Browser checks also uploaded a synthetic image and downloaded both PNG exports successfully. See VALIDATION.md.
+The tests use a generated image with three bright spots. They check candidate detection, brightness clipping, watermark fitting, PNG transparency, invalid input and control changes. See `VALIDATION.md` for the test checklist.

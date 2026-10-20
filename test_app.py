@@ -36,6 +36,4 @@ with patch('streamlit.file_uploader',return_value=Upload()):
  at.run(); assert not at.exception
 with patch('streamlit.file_uploader',return_value=type('Bad',(),{'getvalue':lambda _:b'bad'})()):
  at=AppTest.from_file('app.py').run(); assert not at.exception and len(at.error)==1
-Image.fromarray(photo).save('../../work/test_sky.png')
-Image.fromarray(annotate(enhance(photo,18,1.1),date(2026,10,19),'San José, Puerto Rico',3,[])).save('../../work/preview.png')
-print('PASS: processing, candidate counts, small/panoramic stamps, PNG/RGBA, UI sliders/toggle/location, downloads and invalid input.')
+print('All checks passed.')

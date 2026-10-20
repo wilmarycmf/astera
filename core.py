@@ -1,12 +1,11 @@
-"""Small, explainable OpenCV pipeline for the Astera photo generator.
+"""Image processing functions for ASTERA.
 
-Bright blobs are image highlights, NOT confirmed astronomical stars.
+Bright regions are candidates, not confirmed stars.
 """
 from __future__ import annotations
 
 from datetime import date
 from io import BytesIO
-import re
 import warnings
 from typing import NamedTuple
 
@@ -89,7 +88,7 @@ def detect_highlights(rgb: np.ndarray, threshold: int) -> Detection:
 def annotate(rgb: np.ndarray, observed_on: date, location: str,
              candidate_count: int, points: list[tuple[int, int, int]],
              mark_points: bool = False) -> np.ndarray:
-    """Draw the observation stamp with OpenCV (drawing/annotation concept)."""
+    """Add optional circles and a date/location stamp."""
     output = cv2.cvtColor(rgb.copy(), cv2.COLOR_RGB2BGR)
     h, w = output.shape[:2]
     scale = max(0.45, min(1.2, w / 1200.0))
@@ -98,8 +97,7 @@ def annotate(rgb: np.ndarray, observed_on: date, location: str,
         for cx, cy, radius in points[:200]:
             cv2.circle(output, (cx, cy), radius, (230, 195, 125), thickness, cv2.LINE_AA)
 
-    # Render at readable resolution, then fit the stamp to either photo dimension.
-    # Pillow preserves Unicode place names; OpenCV handles shape annotation/blending.
+    # Draw the text first, then resize the stamp to fit the photo.
     from PIL import ImageDraw, ImageFont
     location_clean = " ".join(location.split())[:65]
     lines = ["ASTERA", observed_on.strftime("%d %b %Y")]
