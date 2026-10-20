@@ -29,7 +29,11 @@ Images are limited to 20 MB / 40 megapixels and fitted within 2,000 pixels on ea
 3. Choose Python 3.12 in advanced settings, then deploy.
 4. Confirm app access is public. Open its actual `.streamlit.app` URL without a signed-in session and test uploading/downloading before submitting it.
 
-**Deployment status:** not yet published; awaiting the user's GitHub sign-in. No public URL has been verified.
+**Live app:** https://astera-wilmarycmf.streamlit.app/
+
+**Repository:** https://github.com/wilmarycmf/astera
+
+Anonymous HTTP access and health check returned 200; public-cloud upload, candidate count and both downloads passed.
 
 ## Validation
 

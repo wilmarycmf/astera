@@ -9,6 +9,8 @@
 - Real browser: uploaded test_sky.png, entered San José, Puerto Rico, displayed original/processed and count 3, downloaded final PNG and transparent PNG. Passed.
 - Downloaded files reopened using Pillow: RGB and RGBA, 900×600. Passed.
 - Local Streamlit server starts and serves app. Passed.
-- Public deployment and anonymous access: pending GitHub authentication. Not claimed as complete.
+- Public deployment: https://astera-wilmarycmf.streamlit.app/
+- Anonymous HTTP page and health check returned 200, without login redirect.
+- Cloud browser: uploaded PNG, verified count 3, location and highlight toggle; downloaded RGB final PNG and RGBA light layer. Passed.
 
 Tested runtime: Python 3.9.6, Streamlit 1.50.0, OpenCV 4.14.0, NumPy 2.0.2, Pillow 11.3.0. Cloud should use Python 3.12.
