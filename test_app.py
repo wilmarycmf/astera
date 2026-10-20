@@ -28,13 +28,25 @@ class Upload:
  def getvalue(self): return raw
 with patch('streamlit.file_uploader',return_value=Upload()):
  at=AppTest.from_file('app.py').run(); assert not at.exception
- assert at.metric[0].value=='3'
+ assert any('Bright-point candidates: 3.' in item.value for item in at.caption)
  at.slider[0].set_value(0); at.slider[2].set_value(-70); at.slider[3].set_value(.7); at.slider[4].set_value(250)
  at.toggle[1].set_value(True); at.text_input[0].set_value('San José, Puerto Rico')
- at.run(); assert not at.exception and at.metric[0].value=='0'
+ at.run(); assert not at.exception and any('Bright-point candidates: 0.' in item.value for item in at.caption)
  assert len(at.get('download_button'))==2
  at.slider[2].set_value(90); at.slider[3].set_value(1.7); at.slider[4].set_value(100)
  at.run(); assert not at.exception
+ for preset, expected in [("Lift shadows", (55,3,4,1.05)), ("Low noise", (15,7,0,1.0))]:
+  at.selectbox[0].set_value(preset).run()
+  assert not at.exception
+  assert tuple(item.value for item in at.slider[:4]) == expected
+ at.slider[2].set_value(40).run()
+ at.button[0].click().run()
+ assert not at.exception
+ assert at.selectbox[0].value == 'Natural'
+ assert tuple(item.value for item in at.slider[:4]) == (25,0,0,1.0)
+ assert at.text_input[0].value == 'San José, Puerto Rico'
+ assert at.slider[4].value == 100
+ assert at.toggle[1].value is True
 with patch('streamlit.file_uploader',return_value=type('Bad',(),{'getvalue':lambda _:b'bad'})()):
  at=AppTest.from_file('app.py').run(); assert not at.exception and len(at.error)==1
 # Recovery controls should preserve shape, lift shadows and reduce flat-field noise.

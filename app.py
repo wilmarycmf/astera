@@ -40,31 +40,64 @@ def read_image(data):
 def recover_image(data, shadows, noise):
     return recover_photo(read_image(data), shadows, noise)
 
+PRESETS = {
+    "Natural": {"shadows": 25, "noise": 0, "brightness": 0, "contrast": 1.0},
+    "Lift shadows": {"shadows": 55, "noise": 3, "brightness": 4, "contrast": 1.05},
+    "Low noise": {"shadows": 15, "noise": 7, "brightness": 0, "contrast": 1.0},
+}
+
+
+def apply_preset():
+    for key, value in PRESETS[st.session_state["preset"]].items():
+        st.session_state[key] = value
+
+
+def reset_adjustments():
+    st.session_state["preset"] = "Natural"
+    apply_preset()
+
+
+for key, value in PRESETS["Natural"].items():
+    if key not in st.session_state:
+        st.session_state[key] = value
+
 with st.sidebar:
     st.markdown('<div class="brand">ASTERA</div>', unsafe_allow_html=True)
     uploaded = st.file_uploader("Your photograph", type=["jpg", "jpeg", "png"], key="upload",
                                help="JPG or PNG, up to 20 MB. Processing fits the photo within 2,000 pixels.")
     use_demo = st.toggle("Try a sample", value=True, help="A synthetic night scene for trying the tools. Your upload replaces it.")
-    st.markdown('<div class="section-label">Adjustments</div>', unsafe_allow_html=True)
-    shadows = st.slider("Recover shadows", 0, 100, 25, step=5,
-                        help="Lift dark detail without adding the same brightness to every pixel. Can also reveal noise.")
-    noise = st.slider("Reduce color noise", 0, 15, 0,
-                     help="Smooth colored grain. Higher values may soften faint lights. Start around 3–5.")
-    brightness = st.slider("Brightness", -70, 90, 0, step=2,
-                          help="Make the whole image lighter or darker. Too much can wash out the sky.")
-    contrast = st.slider("Contrast", .7, 1.7, 1.0, step=.05,
-                        help="Scale pixel intensity. Values above 1 deepen the difference between dark and bright areas.")
+    st.markdown('<div class="section-label">Edit your photo</div>', unsafe_allow_html=True)
+    st.selectbox("Choose a starting point", list(PRESETS), key="preset", on_change=apply_preset,
+                 help="Choose a look, then use Fine-tune if you want to adjust it.")
+    descriptions = {
+        "Natural": "A gentle lift for dark detail.",
+        "Lift shadows": "Brighter dark areas, with light noise reduction.",
+        "Low noise": "Smooths colored grain. Small lights may soften.",
+    }
+    st.caption(descriptions[st.session_state["preset"]])
+    with st.expander("Fine-tune"):
+        st.caption("Optional. Changes appear in the preview.")
+        shadows = st.slider("Recover shadows", 0, 100, step=5, key="shadows",
+                            help="Reveal detail in dark areas. Stronger settings can also reveal grain.")
+        noise = st.slider("Reduce color noise", 0, 15, key="noise",
+                         help="Smooth colored grain. Stronger settings can soften small lights.")
+        brightness = st.slider("Brightness", -70, 90, step=2, key="brightness",
+                              help="Make the whole photo lighter or darker.")
+        contrast = st.slider("Contrast", .7, 1.7, step=.05, key="contrast",
+                            help="Adjust the difference between light and dark pixels.")
+    st.button("Reset adjustments", on_click=reset_adjustments, width="stretch",
+              help="Return the four photo adjustments to Natural. Your photo, stamp and detection settings stay as they are.")
     with st.expander("Explore bright points"):
         st.caption("This tool measures bright regions; it does not improve exposure or identify stars.")
         threshold = st.slider("Detection threshold", 100, 250, 202, step=2,
                               help="Keep pixels brighter than this value after grayscale conversion and smoothing.")
         show_markers = st.toggle("Highlight detected light points", value=False)
         st.caption("Lower values include more light regions. Regions can merge or split, so counts may vary.")
-    with st.expander("Photo stamp", expanded=True):
+    with st.expander("Date & location"):
         stamp = st.toggle("Add date & location", value=True)
         observed_on = st.date_input("Photo date", value=date.today())
         location = st.text_input("Location", placeholder="e.g. Key Largo, Florida", max_chars=65)
-    st.caption("Session only. No photo archive or account required.")
+    st.caption("Upload → choose a starting point → compare → download.")
 
 st.markdown('<div class="editor-bar"><span class="editor-name">Photo editor</span><span class="editor-mode">ASTERA / Night photography</span></div>', unsafe_allow_html=True)
 
@@ -96,7 +129,11 @@ try:
         if show_markers:
             for x, y, radius in detection.points[:200]:
                 cv2.circle(final, (x, y), radius, (125, 195, 230), 1, cv2.LINE_AA)
-    st.caption(f"{source_label} · {original.shape[1]:,} × {original.shape[0]:,} px · PNG export")
+    info, download = st.columns([3, 1], vertical_alignment="center")
+    info.caption(f"{source_label} · {original.shape[1]:,} × {original.shape[0]:,} px")
+    with download:
+        st.download_button("Download PNG", png_bytes(final),
+                           file_name=f"Astera_{observed_on.isoformat()}.png", mime="image/png", type="primary", width="stretch")
     if uploaded is None:
         st.caption("Synthetic sample. Upload a photograph to edit your own image.")
     compare, sides = st.tabs(["Compare", "Side by side"])
@@ -122,23 +159,22 @@ try:
         left, right = st.columns(2)
         left.image(original, caption="Original photograph", width="stretch")
         right.image(final, caption="Edited photograph", width="stretch")
-    a, b, c = st.columns(3)
-    a.metric("Bright-point candidates", str(count))
-    luminance = .2126 * edited[:,:,0] + .7152 * edited[:,:,1] + .0722 * edited[:,:,2]
-    b.metric("Average light", f"{np.mean(luminance) / 255:.0%}")
-    c.metric("Near-white pixels", f"{np.mean(np.max(edited, axis=2) >= 250):.1%}")
-    st.caption("Candidates may include noise, lamps or other objects—not confirmed stars. Near-white pixels can indicate lost highlight detail; these measurements exclude the stamp and markers.")
+    st.caption(f"Bright-point candidates: {count:,}. These may include noise or other lights, not confirmed stars.")
+    with st.expander("Image measurements"):
+        a, b = st.columns(2)
+        luminance = .2126 * edited[:,:,0] + .7152 * edited[:,:,1] + .0722 * edited[:,:,2]
+        a.metric("Average light", f"{np.mean(luminance) / 255:.0%}")
+        b.metric("Near-white pixels", f"{np.mean(np.max(edited, axis=2) >= 250):.1%}")
+        st.caption("Near-white pixels can indicate lost highlight detail. Measurements exclude the stamp and markers.")
     if show_markers and count > 200:
         st.caption("Showing the first 200 candidate markers.")
-    st.download_button("Download PNG", png_bytes(final),
-                       file_name=f"Astera_{observed_on.isoformat()}.png", mime="image/png", type="primary", width="stretch")
     with st.expander("Light mask & transparent export"):
         st.caption("White regions passed the detection threshold. The transparent export keeps these light regions; it does not isolate confirmed stars.")
         st.image(detection.mask, caption="Global-threshold light mask", width="stretch")
         st.download_button("Download transparent light layer · PNG", png_bytes(transparent_light_layer(edited, detection.mask)),
                            file_name=f"Astera_LightLayer_{observed_on.isoformat()}.png", mime="image/png")
     with st.expander("A simple editing workflow"):
-        st.markdown("1. **Reveal:** lift shadows until dark detail becomes visible.\n2. **Refine:** add a little noise reduction if grain becomes distracting. Faint lights may soften.\n3. **Balance:** adjust brightness and contrast while checking the original.\n4. **Keep:** add your stamp and download the result.")
+        st.markdown("1. **Upload** your photograph, or try the sample.\n2. **Choose a starting point.** Fine-tune is optional.\n3. **Compare** the original and edited photo using the slider.\n4. **Download PNG.** Add a date and place first if you want a stamp.")
         st.caption("Images fit within 2,000 pixels. Exports match the processed preview. Nothing is added to a photo archive.")
 except ValueError as exc:
     st.error(str(exc))

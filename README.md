@@ -19,6 +19,8 @@ The count is based on image brightness. A point could be a star, noise or anothe
 
 ## Editing workflow
 
+Choose Natural, Lift shadows or Low noise as a starting point. Fine-tune is optional. Reset adjustments returns the four image controls to Natural without changing your photo, date, location or detection settings.
+
 Lift shadows to reveal dark detail. Add a small amount of noise reduction if grain becomes distracting, then balance brightness and contrast. Use the comparison slider to check the result against the original before downloading. Strong shadow recovery can reveal noise, and strong denoising can soften faint lights. The bright-point detector is a separate exploration tool, not an exposure adjustment.
 
 ## Image processing
