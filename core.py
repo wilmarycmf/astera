@@ -134,3 +134,36 @@ def png_bytes(img: np.ndarray) -> bytes:
     with BytesIO() as out:
         Image.fromarray(img).save(out, format="PNG", optimize=True)
         return out.getvalue()
+
+
+def recover_photo(rgb: np.ndarray, shadows: int = 0, noise: int = 0) -> np.ndarray:
+    """Reduce color noise and gently lift dark pixels before exposure adjustments."""
+    result = rgb.copy()
+    if noise:
+        bgr = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
+        bgr = cv2.fastNlMeansDenoisingColored(bgr, None, noise, noise, 7, 21)
+        result = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+    if shadows:
+        values = np.arange(256, dtype=np.float32) / 255
+        # Gamma lifts dark tones while keeping black and white endpoints fixed.
+        gamma = 1 / (1 + shadows / 70)
+        table = np.round(255 * np.power(values, gamma)).astype(np.uint8)
+        result = cv2.LUT(result, table)
+    return result
+
+
+def demo_photo() -> np.ndarray:
+    """A synthetic practice scene; it is not an astronomical photograph."""
+    rng = np.random.default_rng(17)
+    h, w = 640, 1000
+    yy, xx = np.mgrid[:h, :w]
+    glow = np.exp(-((xx - 620) ** 2 / 100000 + (yy - 300) ** 2 / 65000))
+    sky = np.stack([8 + 12 * glow, 12 + 18 * glow, 23 + 32 * glow], axis=-1)
+    sky = np.clip(sky + rng.normal(0, 3, (h, w, 3)), 0, 255).astype(np.uint8)
+    for _ in range(110):
+        x, y = int(rng.integers(15, w - 15)), int(rng.integers(15, h - 110))
+        shade = int(rng.integers(125, 245))
+        cv2.circle(sky, (x, y), int(rng.choice([1, 1, 2])), (shade, shade, shade), -1, cv2.LINE_AA)
+    ridge = np.array([[0,h],[0,570],[180,510],[330,565],[550,485],[720,540],[850,505],[1000,570],[1000,h]], np.int32)
+    cv2.fillPoly(sky, [ridge], (5, 7, 12))
+    return sky

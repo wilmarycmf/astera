@@ -28,12 +28,19 @@ class Upload:
 with patch('streamlit.file_uploader',return_value=Upload()):
  at=AppTest.from_file('app.py').run(); assert not at.exception
  assert at.metric[0].value=='3'
- at.slider[0].set_value(-70); at.slider[1].set_value(.7); at.slider[2].set_value(250)
- at.toggle[0].set_value(True); at.text_input[0].set_value('San José, Puerto Rico')
+ at.slider[0].set_value(0); at.slider[2].set_value(-70); at.slider[3].set_value(.7); at.slider[4].set_value(250)
+ at.toggle[1].set_value(True); at.text_input[0].set_value('San José, Puerto Rico')
  at.run(); assert not at.exception and at.metric[0].value=='0'
  assert len(at.get('download_button'))==2
- at.slider[0].set_value(90); at.slider[1].set_value(1.7); at.slider[2].set_value(100)
+ at.slider[2].set_value(90); at.slider[3].set_value(1.7); at.slider[4].set_value(100)
  at.run(); assert not at.exception
 with patch('streamlit.file_uploader',return_value=type('Bad',(),{'getvalue':lambda _:b'bad'})()):
  at=AppTest.from_file('app.py').run(); assert not at.exception and len(at.error)==1
+# Recovery controls should preserve shape, lift shadows and reduce flat-field noise.
+assert np.array_equal(recover_photo(photo), photo)
+assert recover_photo(photo, 50, 0)[400,400,0] > photo[400,400,0]
+rng = np.random.default_rng(5)
+noisy = np.clip(35 + rng.normal(0, 6, (100,100,3)), 0,255).astype(np.uint8)
+assert recover_photo(noisy,0,10).std() < noisy.std()
+assert demo_photo().shape == (640,1000,3)
 print('All checks passed.')

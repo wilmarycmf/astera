@@ -7,13 +7,19 @@ ASTERA is a small photo-editing app for night-sky pictures. Upload a JPG or PNG,
 
 ## Features
 
+- Shadow recovery and color-noise reduction
 - Brightness, contrast and detection threshold controls
-- Original and processed photo previews
+- Large before/after comparison slider and side-by-side previews
+- Clearly labeled synthetic practice scene
 - Bright-point candidate count and optional circle markers
 - Date and location stamp
 - Final PNG and transparent light-layer downloads
 
 The count is based on image brightness. A point could be a star, noise or another light source, so it is not a confirmed star count. Changing the threshold can split or merge bright regions. Up to 200 markers are shown.
+
+## Editing workflow
+
+Lift shadows to reveal dark detail. Add a small amount of noise reduction if grain becomes distracting, then balance brightness and contrast. Use the comparison slider to check the result against the original before downloading. Strong shadow recovery can reveal noise, and strong denoising can soften faint lights. The bright-point detector is a separate exploration tool, not an exposure adjustment.
 
 ## Image processing
 
