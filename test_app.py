@@ -24,6 +24,7 @@ for data in [b'bad',b'']:
  except ValueError: pass
 at=AppTest.from_file('app.py').run(); assert not at.exception
 class Upload:
+ name = "test_sky.png"
  def getvalue(self): return raw
 with patch('streamlit.file_uploader',return_value=Upload()):
  at=AppTest.from_file('app.py').run(); assert not at.exception
